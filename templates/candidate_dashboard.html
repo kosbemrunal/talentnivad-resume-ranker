@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candidate Dashboard - TalentNivad</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .navbar-nav .nav-link {
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .navbar-nav .nav-link:hover {
+            color: #667eea !important;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
+        }
+        .stats-card:hover {
+            transform: translateY(-2px);
+        }
+        .candidate-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+            border-left: 5px solid #dee2e6;
+        }
+        .candidate-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+        .status-new { border-left-color: #6c757d; }
+        .status-contacted { border-left-color: #007bff; }
+        .status-shortlisted { border-left-color: #28a745; }
+        .status-interview { border-left-color: #ffc107; }
+        .status-rejected { border-left-color: #dc3545; }
+        .status-hired { border-left-color: #20c997; }
+        .search-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .filter-buttons .btn {
+            border-radius: 25px;
+            margin: 5px;
+        }
+        .candidate-actions .btn {
+            border-radius: 20px;
+            margin: 3px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="{{ url_for('static', filename='logo.png') }}" height="50"class="me-2">
+TalentNivad
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/compare">
+                            <i class="fas fa-upload me-1"></i>Compare Resumes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/candidates">
+                            <i class="fas fa-users me-1"></i>Candidates
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="display-5">
+                <i class="fas fa-users text-primary me-2"></i>
+                Candidate Dashboard
+            </h1>
+            <p class="lead text-muted">Manage and track all your candidates in one place</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row">
+            <div class="col-md-2">
+                <div class="stats-card text-center">
+                    <h3 class="mb-1">{{ candidates|length }}</h3>
+                    <small>Total Candidates</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stats-card text-center">
+                    <h3 class="mb-1">{{ candidates|selectattr('status', 'equalto', 'New')|list|length }}</h3>
+                    <small>New</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stats-card text-center">
+                    <h3 class="mb-1">{{ candidates|selectattr('status', 'equalto', 'Contacted')|list|length }}</h3>
+                    <small>Contacted</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stats-card text-center">
+                    <h3 class="mb-1">{{ candidates|selectattr('status', 'equalto', 'Shortlisted')|list|length }}</h3>
+                    <small>Shortlisted</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stats-card text-center">
+                    <h3 class="mb-1">{{ candidates|selectattr('status', 'equalto', 'Interview Scheduled')|list|length }}</h3>
+                    <small>Interviews</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="stats-card text-center">
+                    <h3 class="mb-1">{{ candidates|selectattr('status', 'equalto', 'Hired')|list|length }}</h3>
+                    <small>Hired</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="search-section">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="searchInput" 
+                               placeholder="Search candidates by name, email, or skills...">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="filter-buttons text-end">
+                        <button class="btn btn-outline-primary" onclick="filterByStatus('all')">All</button>
+                        <button class="btn btn-outline-secondary" onclick="filterByStatus('New')">New</button>
+                        <button class="btn btn-outline-info" onclick="filterByStatus('Contacted')">Contacted</button>
+                        <button class="btn btn-outline-warning" onclick="filterByStatus('Shortlisted')">Shortlisted</button>
+                        <button class="btn btn-outline-success" onclick="filterByStatus('Interview Scheduled')">Interviews</button>
+                        <button class="btn btn-outline-danger" onclick="filterByStatus('Rejected')">Rejected</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Candidates List -->
+        <div id="candidatesList">
+            {% if candidates %}
+            {% for profile in candidates %}
+            <div class="candidate-card status-{{ profile.status.lower().replace(' ', '-') if profile.status else 'new' }}" 
+                 data-status="{{ profile.status or 'New' }}" 
+                 data-name="{{ profile.name or '' }}" 
+                 data-email="{{ profile.email or '' }}">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <h5 class="mb-1">
+                            <i class="fas fa-user me-2"></i>{{ profile.name or 'Name Not Detected' }}
+                        </h5>
+                        <p class="text-muted mb-1">
+                            <i class="fas fa-envelope me-2"></i>{{ profile.email or 'Email Not Detected' }}
+                        </p>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-phone me-2"></i>{{ profile.phone or 'Phone Not Detected' }}
+                        </p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="mb-1">
+                            <i class="fas fa-map-marker-alt me-2"></i>{{ profile.location or 'Location Not Detected' }}
+                        </p>
+                        <p class="mb-1">
+                            <i class="fas fa-clock me-2"></i>{{ profile.experience_years or 'Experience Not Specified' }}
+                        </p>
+                        <p class="mb-0">
+                            <i class="fas fa-calendar me-2"></i>{{ profile.upload_date or 'Date Not Available' }}
+                        </p>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <span class="badge bg-{{ 'success' if profile.status == 'Contacted' else 'warning' if profile.status == 'Shortlisted' else 'danger' if profile.status == 'Rejected' else 'info' if profile.status == 'Interview Scheduled' else 'secondary' }} fs-6">
+                            {{ profile.status or 'New' }}
+                        </span>
+                        {% if profile.last_contact %}
+                        <br><small class="text-muted">{{ profile.last_contact }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        Notes:
+                        {% if profile.notes %}
+                        {{ profile.notes[:50] }}{% if profile.notes|length > 50 %}...{% endif %}
+                        {% else %}
+                        No notes
+                        {% endif %}
+
+                    </div>
+                    <div class="col-md-2">
+                        <div class="candidate-actions">
+                        {% set candidate_id = profile.resume_filename.replace('.docx','').replace('.pdf','') %}
+                            <a href="{{ url_for('contact_candidate', filename=profile.resume_filename) }}" 
+                               class="btn btn-primary btn-sm">
+                                <i class="fas fa-envelope me-1"></i>Contact
+                            </a>
+                            <a href="{{ url_for('view_candidate', candidate_id=profile.resume_filename.replace('.docx', '')) }}" 
+                               class="btn btn-info btn-sm">
+                                <i class="fas fa-eye me-1"></i>View
+                            </a>
+                            <button class="btn btn-warning btn-sm" onclick="editCandidate('{{ candidate_id }}')">
+                            <i class="fas fa-edit me-1"></i>Edit
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteCandidate('{{ candidate_id }}')">
+                            <i class="fas fa-trash me-1"></i>Delete
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="rejectCandidate('{{ candidate_id }}')">
+                            <i class="fas fa-times me-1"></i>Reject
+                            </button>
+                        
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- No Candidates Message -->
+        {% if not candidates %}
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No candidates found</h4>
+            <p class="text-muted">Upload some resumes to get started!</p>
+            <a href="/compare" class="btn btn-primary btn-lg">
+                <i class="fas fa-upload me-2"></i>Upload Resumes
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="text-center mt-5 mb-5">
+            <a href="/compare" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-upload me-2"></i>Compare More Resumes
+            </a>
+            <a href="/" class="btn btn-outline-secondary btn-lg">
+                <i class="fas fa-home me-2"></i>Back to Home
+            </a>
+        </div>
+    </div>
+
+    <!-- Edit Candidate Modal -->
+    <div class="modal fade" id="editCandidateModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Candidate Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editCandidateForm">
+                        <input type="hidden" id="editCandidateId">
+                        <div class="mb-3">
+                            <label for="editName" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="editName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPhone" class="form-label">Phone</label>
+                            <input type="text" class="form-control" id="editPhone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editLocation" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="editLocation">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editExperience" class="form-label">Experience</label>
+                            <input type="text" class="form-control" id="editExperience">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="editNotes" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCandidateEdit()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteCandidateModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this candidate? This action cannot be undone.</p>
+                    <input type="hidden" id="deleteCandidateId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDeleteCandidate()">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Candidate Modal -->
+    <div class="modal fade" id="rejectCandidateModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Candidate</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="rejectCandidateForm">
+                        <input type="hidden" id="rejectCandidateId">
+                        <div class="mb-3">
+                            <label for="rejectionReason" class="form-label">Rejection Reason</label>
+                            <select class="form-select" id="rejectionReason" required>
+                                <option value="">Select a reason</option>
+                                <option value="Skills mismatch">Skills mismatch</option>
+                                <option value="Experience insufficient">Experience insufficient</option>
+                                <option value="Location constraint">Location constraint</option>
+                                <option value="Salary expectation">Salary expectation</option>
+                                <option value="Cultural fit">Cultural fit</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rejectionNotes" class="form-label">Additional Notes</label>
+                            <textarea class="form-control" id="rejectionNotes" rows="3" placeholder="Optional additional feedback..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmRejectCandidate()">Reject Candidate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const candidates = document.querySelectorAll('.candidate-card');
+            
+            candidates.forEach(candidate => {
+                const name = candidate.dataset.name.toLowerCase();
+                const email = candidate.dataset.email.toLowerCase();
+                const status = candidate.dataset.status.toLowerCase();
+                
+                if (name.includes(searchTerm) || email.includes(searchTerm) || status.includes(searchTerm)) {
+                    candidate.style.display = 'block';
+                } else {
+                    candidate.style.display = 'none';
+                }
+            });
+        });
+
+        // Filter by status
+        function filterByStatus(status) {
+            const candidates = document.querySelectorAll('.candidate-card');
+            
+            candidates.forEach(candidate => {
+                const candidateStatus = candidate.dataset.status;
+                
+                if (status === 'all' || candidateStatus === status) {
+                    candidate.style.display = 'block';
+                } else {
+                    candidate.style.display = 'none';
+                }
+            });
+            
+            // Update active filter button
+            document.querySelectorAll('.filter-buttons .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // Auto-refresh every 30 seconds for real-time updates
+        setInterval(function() {
+            // In a real application, this would fetch updated data
+            // For now, we'll just show a subtle indicator
+            console.log('Dashboard refreshed at:', new Date().toLocaleTimeString());
+        }, 30000);
+
+        // Edit Candidate Functions
+        function editCandidate(candidateId) {
+            // Get candidate data from the page
+            const candidateCard = document.querySelector(`[data-candidate-id="${candidateId}"]`);
+            if (!candidateCard) {
+                // Try to find by candidate ID in the DOM
+                const candidates = document.querySelectorAll('.candidate-card');
+                let candidate = null;
+                candidates.forEach(card => {
+                    if (card.querySelector(`a[href*="${candidateId}"]`)) {
+                        candidate = card;
+                    }
+                });
+                if (!candidate) return;
+                
+                // Extract data from the card
+                const name = candidate.querySelector('h5').textContent.replace('Name Not Detected', '').trim();
+                const email = candidate.querySelector('.fa-envelope').parentElement.textContent.replace('Email Not Detected', '').trim();
+                const phone = candidate.querySelector('.fa-phone').parentElement.textContent.replace('Phone Not Detected', '').trim();
+                const location = candidate.querySelector('.fa-map-marker-alt').parentElement.textContent.replace('Location Not Detected', '').trim();
+                const experience = candidate.querySelector('.fa-clock').parentElement.textContent.replace('Experience Not Specified', '').trim();
+                const notes = candidate.querySelector('.fa-sticky-note') ? 
+                    candidate.querySelector('.fa-sticky-note').parentElement.nextElementSibling.textContent : '';
+                
+                // Populate modal
+                document.getElementById('editCandidateId').value = candidateId;
+                document.getElementById('editName').value = name;
+                document.getElementById('editEmail').value = email;
+                document.getElementById('editPhone').value = phone;
+                document.getElementById('editLocation').value = location;
+                document.getElementById('editExperience').value = experience;
+                document.getElementById('editNotes').value = notes;
+            }
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('editCandidateModal'));
+            modal.show();
+        }
+
+        function saveCandidateEdit() {
+            const candidateId = document.getElementById('editCandidateId').value;
+            const formData = {
+                name: document.getElementById('editName').value,
+                email: document.getElementById('editEmail').value,
+                phone: document.getElementById('editPhone').value,
+                location: document.getElementById('editLocation').value,
+                experience: document.getElementById('editExperience').value,
+                notes: document.getElementById('editNotes').value
+            };
+
+            fetch(`/api/edit_candidate/${candidateId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the page
+                    location.reload();
+                } else {
+                    alert('Error updating candidate: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating candidate');
+            });
+
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editCandidateModal'));
+            modal.hide();
+        }
+
+        // Delete Candidate Functions
+        function deleteCandidate(candidateId) {
+            document.getElementById('deleteCandidateId').value = candidateId;
+            const modal = new bootstrap.Modal(document.getElementById('deleteCandidateModal'));
+            modal.show();
+        }
+
+        function confirmDeleteCandidate() {
+            const candidateId = document.getElementById('deleteCandidateId').value;
+            
+            fetch(`/api/delete_candidate/${candidateId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove from page
+                    location.reload();
+                } else {
+                    alert('Error deleting candidate: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting candidate');
+            });
+
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteCandidateModal'));
+            modal.hide();
+        }
+
+        // Reject Candidate Functions
+        function rejectCandidate(candidateId) {
+            document.getElementById('rejectCandidateId').value = candidateId;
+            const modal = new bootstrap.Modal(document.getElementById('rejectCandidateModal'));
+            modal.show();
+        }
+
+        function confirmRejectCandidate() {
+            const candidateId = document.getElementById('rejectCandidateId').value;
+            const reason = document.getElementById('rejectionReason').value;
+            const notes = document.getElementById('rejectionNotes').value;
+            
+            if (!reason) {
+                alert('Please select a rejection reason');
+                return;
+            }
+
+            fetch(`/api/reject_candidate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    candidate_id: candidateId,
+                    reason: reason,
+                    notes: notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the page
+                    location.reload();
+                } else {
+                    alert('Error rejecting candidate: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error rejecting candidate');
+            });
+
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('rejectCandidateModal'));
+            modal.hide();
+        }
+    </script>
+</body>
+</html>
